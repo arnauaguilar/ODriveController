@@ -1,12 +1,15 @@
 // If DEBUG is set to true, the arduino will send back all the received messages
 #define DEBUG false
-#define SERIAL_BUFFER_SIZE 64  // OLED display height, in pixels
+//#define SERIAL_SIZE 64  // OLED display height, in pixels
 
 #include <Arduino.h>
+#include <map>
+#include <functional>
 
 class SerialProtocolManager {
 public:
-
+  using callbackSignature = std::function<void(/* parameters go here like this: float a, int b | or: void* that means whatever inputs you want */)>;
+  //std::function<void()>
   void GetMessagesFromSerial(float& var1, float& var2);
   void ReadSignedBytes(int8_t* buffer, size_t n);
   void WaitForBytes(uint8_t num_bytes, unsigned long timeout);
@@ -16,10 +19,7 @@ public:
   template<typename T>
   T Read();
 
-
-
-  // Define the orders that can be sent and received
-  enum Order: uint8_t {
+  enum Order : uint8_t {
     UNKNOWN = 0,
     HELLO = 1,
     VAR1 = 2,
@@ -29,6 +29,13 @@ public:
     RECEIVED = 6,
     STOP = 7
   };
+
+  void RegisterCallback(Order order, std::function<void()> callback);
+
+  std::map<Order, std::function<void()> > callbacks;
+
+
+
 
   bool is_connected = false;  ///< True if the connection with the master is available
   //Order Order;

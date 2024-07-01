@@ -404,15 +404,76 @@ float step = 0.f;
 //}
 
 
+void RecievedHello() {
+  Serial.println("Hello execution");
+  if (!serialManager.is_connected) {
+    serialManager.is_connected = true;
+    serialManager.Write(SerialProtocolManager::HELLO);
+  } else {
+    // If we are already connected do not send "hello" to avoid infinite loop
+    serialManager.Write(SerialProtocolManager::ALREADY_CONNECTED);
+  }
+  serialManager.Write(SerialProtocolManager::RECEIVED);
+}
+
+void RegisterSerialCallbacks() {
+  serialManager.RegisterCallback(SerialProtocolManager::VAR2, []() {
+    var2 = float(serialManager.Read<int32_t>()) / 1000.0f;
+    if (DEBUG) {
+      serialManager.Write(SerialProtocolManager::VAR2);
+      serialManager.Write<int32_t>(var2 * 1000);
+    }
+  });
+
+  serialManager.RegisterCallback(SerialProtocolManager::VAR1, []() {
+    var1 = float(serialManager.Read<int32_t>()) / 1000.0f;
+    if (DEBUG) {
+      serialManager.Write(SerialProtocolManager::VAR1);
+      serialManager.Write<int32_t>(var1 * 1000);
+    }
+  });
+
+  serialManager.RegisterCallback(SerialProtocolManager::HELLO, []() {
+    Serial.println("Hello execution");
+    if (!serialManager.is_connected) {
+      serialManager.is_connected = true;
+      serialManager.Write(SerialProtocolManager::HELLO);
+    } else {
+      // If we are already connected do not send "hello" to avoid infinite loop
+      serialManager.Write(SerialProtocolManager::ALREADY_CONNECTED);
+    }
+    serialManager.Write(SerialProtocolManager::RECEIVED);
+  });
+}
+
 void setup() {
   // Init Serial
   Serial.begin(115200);
+
+
+
   // Wait for up to 3 seconds for the serial port to be opened on the PC side.
   // If no PC connects, continue anyway.
   for (int i = 0; i < 30 && !Serial; ++i) {
     delay(100);
   }
   delay(200);
+
+  Serial.println("//");
+  std::map<SerialProtocolManager::Order, std::function<void()>> testmap;
+  testmap[SerialProtocolManager::HELLO] = []() {
+    Serial.println("Func 0");
+  };
+  testmap[SerialProtocolManager::VAR1] = []() {
+    Serial.println("Func 1");
+  };
+  Serial.print("Map size: ");
+  Serial.println(testmap.size());
+  std::invoke(testmap[SerialProtocolManager::HELLO]);
+  testmap[SerialProtocolManager::VAR1]();
+  Serial.println("//");
+
+
   //Serial.println("Starting ODriveCAN demo");
   // Register callbacks for the heartbeat and encoder feedback messages
   odrv0.onFeedback(onFeedback, &odrv0_user_data);
@@ -477,6 +538,7 @@ void setup() {
     if (Serial.available() > 0) serialManager.GetMessagesFromSerial(var1, var2);
   }
   DrawScreen(String("SetupDone"));
+  RegisterSerialCallbacks();
 }
 
 
@@ -495,7 +557,6 @@ void loop() {
     Get_Encoder_Estimates_msg_t feedback = odrv0_user_data.last_feedback;
     odrv0_user_data.received_feedback = false;
     currentPos = feedback.Pos_Estimate;
-
   }
   if (odrv0_user_data.received_heartbeat) {
     if (odrv0_user_data.last_heartbeat.Axis_Error != 0) {
