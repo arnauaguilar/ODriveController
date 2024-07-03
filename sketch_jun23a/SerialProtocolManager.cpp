@@ -7,49 +7,7 @@ void SerialProtocolManager::GetMessagesFromSerial(float& var1,float& var2) {
 
   // The first byte received is the instruction
   Order readedOrder = Read<Order>();
-  Serial.print("readedOrder: ");
-  Serial.println(callbacks.size());
   callbacks[readedOrder]();
-
-  //if (order_received == HELLO) {
-  //  orders
-  //} else if (order_received == ALREADY_CONNECTED) {
-  //  is_connected = true;
-  //} else {
-  //  switch (order_received) {
-  //    case STOP:
-  //      {
-  //        if (DEBUG) {
-  //          Write(STOP);
-  //        }
-  //        break;
-  //      }
-  //    case VAR1:
-  //      {
-  //        var1 = float(Read<int32_t>())/1000.0f;
-  //        if (DEBUG) {
-  //          Write(VAR1);
-  //          Write<int32_t>(var1*1000);
-  //        }
-  //        break;
-  //      }
-  //    case VAR2:
-  //      {
-  //        var2 = float(Read<int32_t>())/1000.0f;
-  //        if (DEBUG) {
-  //          Write(VAR2);
-  //          Write<int32_t>(var2*1000);
-  //        }
-  //        break;
-  //      }
-  //    // Unknown order
-  //    default:
-  //      Write(ERROR);
-  //      Write<int16_t>(404);
-  //      return;
-  //  }
-  //}
-  //Write(RECEIVED);  // Confirm the reception
 }
 
 void SerialProtocolManager::RegisterCallback(SerialProtocolManager::Order order, std::function<void()> callback){

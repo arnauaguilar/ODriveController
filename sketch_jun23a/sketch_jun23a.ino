@@ -15,7 +15,7 @@
 //
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 long displayedFrames = 0;
-float var1 = 0, var2 = 0;
+float position = 0, velocity = 18, torque = 10;
 //
 SerialProtocolManager serialManager;
 
@@ -204,27 +204,10 @@ float lerp(float a, float b, float x) {
   return a + x * (b - a);
 }
 
-void DrawScreen(String DebugMessage) {
-  display.clearDisplay();
-
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(0, 0);
-  // Display static text
-  display.print("Var1: ");
-  display.println(var1);
-  display.print("Var2: ");
-  display.println(var2);
-  display.setCursor(0, 64 - 8);
-  display.print(DebugMessage);
 
 
-  display.display();
-  displayedFrames++;
-}
 
-
-float currentPos;
+float currentPos, currentVel;
 float targetRotation;
 float startRotation;
 float estimatedMicroseconds;
@@ -233,208 +216,66 @@ float elapsedFrames = 0.f;
 float moveProgress = 2.f;
 float step = 0.f;
 
+void DrawScreen(String DebugMessage) {
+  display.clearDisplay();
 
-//void setup() {
-//  Serial.begin(115200);
-//  // Wait for up to 3 seconds for the serial port to be opened on the PC side.
-//  // If no PC connects, continue anyway.
-//  for (int i = 0; i < 30 && !Serial; ++i) {
-//    delay(100);
-//  }
-//  delay(200);
-//
-//
-//  Serial.println("Starting ODriveCAN demo");
-//
-//  // Register callbacks for the heartbeat and encoder feedback messages
-//  odrv0.onFeedback(onFeedback, &odrv0_user_data);
-//  odrv0.onStatus(onHeartbeat, &odrv0_user_data);
-//
-//  // Configure and initialize the CAN bus interface. This function depends on
-//  // your hardware and the CAN stack that you're using.
-//  if (!setupCan()) {
-//    Serial.println("CAN failed to initialize: reset required");
-//    while (true)
-//      ;  // spin indefinitely
-//  }
-//
-//  Serial.println("Waiting for ODrive...");
-//  while (!odrv0_user_data.received_heartbeat) {
-//    pumpEvents(can_intf);
-//    delay(100);
-//  }
-//
-//  Serial.println("found ODrive");
-//
-//  // request bus voltage and current (1sec timeout)
-//  Serial.println("attempting to read bus voltage and current");
-//  Get_Bus_Voltage_Current_msg_t vbus;
-//  if (!odrv0.request(vbus, 1)) {
-//    Serial.println("vbus request failed!");
-//    while (true)
-//      ;  // spin indefinitely
-//  }
-//
-//  Serial.print("DC voltage [V]: ");
-//  Serial.println(vbus.Bus_Voltage);
-//  Serial.print("DC current [A]: ");
-//  Serial.println(vbus.Bus_Current);
-//
-//  Serial.println("Enabling closed loop control...");
-//  while (odrv0_user_data.last_heartbeat.Axis_State != ODriveAxisState::AXIS_STATE_CLOSED_LOOP_CONTROL) {
-//    odrv0.clearErrors();
-//    delay(1);
-//    odrv0.setState(ODriveAxisState::AXIS_STATE_CLOSED_LOOP_CONTROL);
-//
-//    // Pump events for 150ms. This delay is needed for two reasons;
-//    // 1. If there is an error condition, such as missing DC power, the ODrive might
-//    //    briefly attempt to enter CLOSED_LOOP_CONTROL state, so we can't rely
-//    //    on the first heartbeat response, so we want to receive at least two
-//    //    heartbeats (100ms default interval).
-//    // 2. If the bus is congested, the setState command won't get through
-//    //    immediately but can be delayed.
-//    for (int i = 0; i < 15; ++i) {
-//      delay(10);
-//      pumpEvents(can_intf);
-//    }
-//  }
-//
-//  Serial.println("ODrive running!");
-//  odrv0.setLimits(18, 10);
-//  delay(100);
-//  odrv0.setPosition(0);
-//}
-//
-//
-//void loop() {
-//  unsigned long frameTime = CalculateDeltaTime();
-//  pumpEvents(can_intf);  // This is required on some platforms to handle incoming feedback CAN messages
-//   //Serial.println("ping ");
-//  if (Serial.available()) {
-//    Serial.print("about to read: ");
-//    String serialResponse = Serial.readStringUntil('|');
-//
-//    float p, v;
-//    // Convert from String Object to String.
-//    char buf[sizeof("0.0;5.5")];
-//    serialResponse.toCharArray(buf, sizeof(buf));
-//    char* po = buf;
-//    char* str;
-//    int count = 0;
-//    while ((str = strtok_r(po, ";", &po)) != NULL) {  // delimiter is the semicolon
-//      String f = str;
-//      if (count == 0) p = f.toFloat();
-//      else v = f.toFloat();
-//      count++;
-//    }
-//
-//    Serial.print("Read: ");
-//    Serial.print(p);
-//    Serial.print(" and: ");
-//    Serial.println(v);
-//    //Serial.readBytes(buff,4);
-//    //float p = Serial.parseFloat();
-//    //Serial.readBytes(buff,4);
-//    //float v = Serial.parseFloat();
-//
-//    // Serial.flush();
-//    float errors = Serial.parseFloat();
-//    if (errors > 0) {
-//      odrv0.clearErrors();
-//      Reboot_msg_t msg;
-//      odrv0.send(msg);
-//      //Serial.print("Cleared Errors");
-//      delay(100);
-//      while (odrv0_user_data.last_heartbeat.Axis_State != ODriveAxisState::AXIS_STATE_CLOSED_LOOP_CONTROL) {
-//        odrv0.clearErrors();
-//        delay(1);
-//        odrv0.setState(ODriveAxisState::AXIS_STATE_CLOSED_LOOP_CONTROL);
-//
-//        // Pump events for 150ms. This delay is needed for two reasons;
-//        // 1. If there is an error condition, such as missing DC power, the ODrive might
-//        //    briefly attempt to enter CLOSED_LOOP_CONTROL state, so we can't rely
-//        //    on the first heartbeat response, so we want to receive at least two
-//        //    heartbeats (100ms default interval).
-//        // 2. If the bus is congested, the setState command won't get through
-//        //    immediately but can be delayed.
-//        for (int i = 0; i < 15; ++i) {
-//          delay(10);
-//          pumpEvents(can_intf);
-//        }
-//      }
-//
-//      //Serial.println("ODrive running!");
-//      odrv0.setLimits(18, 10);
-//      delay(100);
-//      ////////////////////////////////odrv0.setPosition(0);
-//    }
-//    //Serial.print("t: ");
-//    //Serial.print(p);
-//    //Serial.print(", v: ");
-//    //Serial.println(v);
-//
-//    odrv0.setLimits(min(v, 18), 10);
-//    delay(1);
-//    //Serial.println("Now");
-//    odrv0.setPosition(p);
-//    return;
-//  }
-//
-//  // print position and velocity for Serial Plotter
-//  if (odrv0_user_data.received_feedback) {
-//    Get_Encoder_Estimates_msg_t feedback = odrv0_user_data.last_feedback;
-//    odrv0_user_data.received_feedback = false;
-//    currentPos = feedback.Pos_Estimate;
-//
-//    //Serial.print("odrv0-pos:");
-//    //Serial.print(feedback.Pos_Estimate);
-//    //Serial.print(",");
-//    //Serial.print("odrv0-vel:");
-//    //Serial.println(feedback.Vel_Estimate);
-//  }
-//  if (odrv0_user_data.received_heartbeat) {
-//    if (odrv0_user_data.last_heartbeat.Axis_Error != 0) {
-//      Serial.print("State: ");
-//      Serial.print(odrv0_user_data.last_heartbeat.Axis_State);
-//      Serial.print("Errors: ");
-//      Serial.println(odrv0_user_data.last_heartbeat.Axis_Error);
-//      odrv0_user_data.received_heartbeat = false;
-//    }
-//  }
-//}
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0, 0);
+  // Display static text
+  display.print("Current Pos: ");
+  display.println(currentPos);
+  display.print("Current Vel: ");
+  display.println(currentVel);
+  display.print("Position: ");
+  display.println(position);
+  display.print("Velocity: ");
+  display.println(velocity);
+  display.print("Torque: ");
+  display.println(torque);
+  display.setCursor(0, 64 - 8);
+  display.print(DebugMessage);
 
 
-void RecievedHello() {
-  Serial.println("Hello execution");
-  if (!serialManager.is_connected) {
-    serialManager.is_connected = true;
-    serialManager.Write(SerialProtocolManager::HELLO);
-  } else {
-    // If we are already connected do not send "hello" to avoid infinite loop
-    serialManager.Write(SerialProtocolManager::ALREADY_CONNECTED);
-  }
+  display.display();
+  displayedFrames++;
+}
+
+void SendRecievedMessage() {
   serialManager.Write(SerialProtocolManager::RECEIVED);
+  serialManager.Write<int32_t>(currentPos*1000);
+  serialManager.Write<int32_t>(currentVel*1000);
 }
 
 void RegisterSerialCallbacks() {
-  serialManager.RegisterCallback(SerialProtocolManager::VAR2, []() {
-    var2 = float(serialManager.Read<int32_t>()) / 1000.0f;
+  serialManager.RegisterCallback(SerialProtocolManager::VELOCITY, []() {
+    velocity = float(serialManager.Read<int32_t>()) / 1000.0f;
     if (DEBUG) {
-      serialManager.Write(SerialProtocolManager::VAR2);
-      serialManager.Write<int32_t>(var2 * 1000);
+      serialManager.Write(SerialProtocolManager::VELOCITY);
+      serialManager.Write<int32_t>(velocity * 1000);
     }
+    SendRecievedMessage();
   });
 
-  serialManager.RegisterCallback(SerialProtocolManager::VAR1, []() {
-    var1 = float(serialManager.Read<int32_t>()) / 1000.0f;
+  serialManager.RegisterCallback(SerialProtocolManager::POSITION, []() {
+    position = float(serialManager.Read<int32_t>()) / 1000.0f;
     if (DEBUG) {
-      serialManager.Write(SerialProtocolManager::VAR1);
-      serialManager.Write<int32_t>(var1 * 1000);
+      serialManager.Write(SerialProtocolManager::POSITION);
+      serialManager.Write<int32_t>(position * 1000);
     }
+    SendRecievedMessage();
+  });
+
+  serialManager.RegisterCallback(SerialProtocolManager::TORQUE, []() {
+    torque = float(serialManager.Read<int32_t>()) / 1000.0f;
+    if (DEBUG) {
+      serialManager.Write(SerialProtocolManager::TORQUE);
+      serialManager.Write<int32_t>(torque * 1000);
+    }
+    SendRecievedMessage();
   });
 
   serialManager.RegisterCallback(SerialProtocolManager::HELLO, []() {
-    Serial.println("Hello execution");
     if (!serialManager.is_connected) {
       serialManager.is_connected = true;
       serialManager.Write(SerialProtocolManager::HELLO);
@@ -442,7 +283,7 @@ void RegisterSerialCallbacks() {
       // If we are already connected do not send "hello" to avoid infinite loop
       serialManager.Write(SerialProtocolManager::ALREADY_CONNECTED);
     }
-    serialManager.Write(SerialProtocolManager::RECEIVED);
+    SendRecievedMessage();
   });
 }
 
@@ -458,20 +299,6 @@ void setup() {
     delay(100);
   }
   delay(200);
-
-  Serial.println("//");
-  std::map<SerialProtocolManager::Order, std::function<void()>> testmap;
-  testmap[SerialProtocolManager::HELLO] = []() {
-    Serial.println("Func 0");
-  };
-  testmap[SerialProtocolManager::VAR1] = []() {
-    Serial.println("Func 1");
-  };
-  Serial.print("Map size: ");
-  Serial.println(testmap.size());
-  std::invoke(testmap[SerialProtocolManager::HELLO]);
-  testmap[SerialProtocolManager::VAR1]();
-  Serial.println("//");
 
 
   //Serial.println("Starting ODriveCAN demo");
@@ -521,9 +348,9 @@ void setup() {
     }
   }
   //Serial.println("ODrive running!");
-  odrv0.setLimits(18, 10);
+  odrv0.setLimits(velocity, torque);
   delay(100);
-  odrv0.setPosition(0);
+  odrv0.setPosition(position);
 
   if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {  // Address 0x3D for 128x64
     Serial.println(F("SSD1306 allocation failed"));
@@ -531,14 +358,14 @@ void setup() {
       ;
   }
   DrawScreen(String("Awaiting Connection"));
+  RegisterSerialCallbacks();
   // Wait until the arduino is connected to master
   while (!serialManager.is_connected) {
     serialManager.Write(SerialProtocolManager::HELLO);
     serialManager.WaitForBytes(1, 1000);
-    if (Serial.available() > 0) serialManager.GetMessagesFromSerial(var1, var2);
+    if (Serial.available() > 0) serialManager.GetMessagesFromSerial(position, velocity);
   }
   DrawScreen(String("SetupDone"));
-  RegisterSerialCallbacks();
 }
 
 
@@ -547,16 +374,24 @@ void loop() {
   unsigned long frameTime = CalculateDeltaTime();
   pumpEvents(can_intf);          // This is required on some platforms to handle incoming feedback CAN messages
   if (Serial.available() > 0) {  ///////////////////////move the if out of the get message from serial
-    serialManager.GetMessagesFromSerial(var1, var2);
-    odrv0.setPosition(var1);
+    serialManager.GetMessagesFromSerial(position, velocity);
+    odrv0.setLimits(velocity, torque);
+    delay(10);
+    odrv0.setPosition(position);
+    //Get_Encoder_Estimates_msg_t feedback;
+    //odrv0.getFeedback(feedback);
+    //currentPos = feedback.Pos_Estimate;
+    //currentVel = feedback.Vel_Estimate;
     DrawScreen(String(displayedFrames));  //////////////////////take out of here
   }
 
   // print position and velocity for Serial Plotter
   if (odrv0_user_data.received_feedback) {
     Get_Encoder_Estimates_msg_t feedback = odrv0_user_data.last_feedback;
-    odrv0_user_data.received_feedback = false;
     currentPos = feedback.Pos_Estimate;
+    currentVel = feedback.Vel_Estimate;
+    odrv0_user_data.received_feedback = false;
+    //DrawScreen(String(displayedFrames*-1));
   }
   if (odrv0_user_data.received_heartbeat) {
     if (odrv0_user_data.last_heartbeat.Axis_Error != 0) {

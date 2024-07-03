@@ -22,12 +22,12 @@ public:
   enum Order : uint8_t {
     UNKNOWN = 0,
     HELLO = 1,
-    VAR1 = 2,
-    VAR2 = 3,
-    ALREADY_CONNECTED = 4,
-    ERROR = 5,
+    POSITION = 2,
+    VELOCITY = 3,
+    TORQUE = 4,
+    ALREADY_CONNECTED = 5,
     RECEIVED = 6,
-    STOP = 7
+    ERROR = 7
   };
 
   void RegisterCallback(Order order, std::function<void()> callback);
