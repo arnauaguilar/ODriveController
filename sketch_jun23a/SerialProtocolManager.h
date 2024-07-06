@@ -55,9 +55,11 @@ void SerialProtocolManager::Write(T val) {
 template<typename T>  //specialize uint8 for speed
 T SerialProtocolManager::Read() {
   constexpr size_t SIZE = sizeof(T) / sizeof(uint8_t);
-  int8_t buffer[SIZE];
+  byte buffer[SIZE];
   WaitForBytes(SIZE, 200);
-  ReadSignedBytes(buffer, SIZE);
+  //ReadSignedBytes(buffer, SIZE);
+  Serial.readBytes(buffer, SIZE);
+
   long result = NULL;
   long mask = 0xff;
   for (size_t i = 0; i < SIZE; ++i) {

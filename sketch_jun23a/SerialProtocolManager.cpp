@@ -1,6 +1,6 @@
+#pragma once
 #include "Arduino.h"
 #include <functional>
-#pragma once
 #include "SerialProtocolManager.h"
 
 void SerialProtocolManager::GetMessagesFromSerial(float& var1,float& var2) {
