@@ -2,18 +2,19 @@
 #include "ODriveController.h"
 #include "algorithm"
 
-ODriveCAN odrv0(wrap_can_intf(can_intf), 0);  // Standard CAN message ID
-ODriveCAN odrv1(wrap_can_intf(can_intf), 1);  // Standard CAN message ID
+ODriveCAN odrv10(wrap_can_intf(can_intf), 10);  // Standard CAN message ID
+//ODriveCAN odrv1(wrap_can_intf(can_intf), 1);  // Standard CAN message ID
 
 
 ODriveController::ODriveController() 
 {
   oDrives.reserve(ODRIVES_AMOUNT);
-  oDrives.emplace_back(&odrv0);
-  oDrives.emplace_back(&odrv1);
-  
+  //oDrives.emplace_back(&odrv0);
+  //oDrives.emplace_back(&odrv1);
+
   for(int i = 0; i < ODRIVES_AMOUNT; ++i){
     oDrivesUserData.emplace_back(ODriveUserData());
+    oDrives.emplace_back(wrap_can_intf(can_intf), i);
   }
 }
 
@@ -22,8 +23,8 @@ void ODriveController::SetODrivesCallbacks()
   for(auto i = 0; i < ODRIVES_AMOUNT; ++i)
   {
     // Register callbacks for the heartbeat and encoder feedback messages
-    oDrives[i]->onFeedback(onFeedback, &oDrivesUserData[i]);
-    oDrives[i]->onStatus(onHeartbeat, &oDrivesUserData[i]);
+    oDrives[i].onFeedback(onFeedback, &oDrivesUserData[i]);
+    oDrives[i].onStatus(onHeartbeat, &oDrivesUserData[i]);
   }
 }
 
@@ -39,7 +40,7 @@ void ODriveController::SetUpODrivesConnection(int retryDelays){
     //Serial.println("attempting to read bus voltage and current");
     
     Get_Bus_Voltage_Current_msg_t vbus;
-    if (!oDrives[i]->request(vbus, 1)) 
+    if (!oDrives[i].request(vbus, 1)) 
     {
       Serial.print("vbus request failed for: ");
       Serial.println(i);
@@ -52,9 +53,9 @@ void ODriveController::SetUpODrivesConnection(int retryDelays){
   {
     while (oDrivesUserData[i].last_heartbeat.Axis_State != ODriveAxisState::AXIS_STATE_CLOSED_LOOP_CONTROL) 
     {
-      oDrives[i]->clearErrors();
+      oDrives[i].clearErrors();
       delay(1);
-      oDrives[i]->setState(ODriveAxisState::AXIS_STATE_CLOSED_LOOP_CONTROL);
+      oDrives[i].setState(ODriveAxisState::AXIS_STATE_CLOSED_LOOP_CONTROL);
       // Pump events for 150ms. This delay is needed for two reasons;
       // 1. If there is an error condition, such as missing DC power, the ODrive might
       //    briefly attempt to enter CLOSED_LOOP_CONTROL state, so we can't rely
@@ -73,12 +74,12 @@ void ODriveController::SetUpODrivesConnection(int retryDelays){
 
 void ODriveController::SetODrivePosition(int index, float pos = DEFAULT_POS)
 {
-  oDrives[index]->setPosition(pos);
+  oDrives[index].setPosition(pos);
 }
 
 void ODriveController::SetODriveLimits(int index, float vel = MAX_SPEED, float torque = MAX_TORQUE)
 {
-  oDrives[index]->setLimits(std::min(vel, (float)MAX_SPEED), std::min(torque, (float)MAX_TORQUE));
+  oDrives[index].setLimits(std::min(vel, (float)MAX_SPEED), std::min(torque, (float)MAX_TORQUE));
 }
 
 void ODriveController::SetInitialStates()
@@ -92,8 +93,8 @@ void ODriveController::SetInitialStates()
 }
 
 void ODriveController::OnCanMessage(const CanMsg& msg) {
-  for (auto odrive : oDrives) {
-    onReceive(msg, *odrive);
+  for (auto&& odrive : oDrives) {
+    onReceive(msg, odrive);
   }
 }
 

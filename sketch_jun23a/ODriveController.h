@@ -37,7 +37,7 @@ class ODriveController {
     static void onFeedback(Get_Encoder_Estimates_msg_t& msg, void* user_data);
 
     static constexpr int ODRIVES_AMOUNT = 2; // Todo: Expose it via intTotype
-    std::vector<ODriveCAN*> oDrives; // = { &odrv0, &odrv1 };
+    std::vector<ODriveCAN> oDrives; // = { &odrv0, &odrv1 };
     std::vector<ODriveUserData> oDrivesUserData;
     
 };
