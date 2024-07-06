@@ -8,6 +8,7 @@
 static HardwareCAN& can_intf = CAN;
 
 
+
 struct ODriveUserData {
   Heartbeat_msg_t last_heartbeat;
   bool received_heartbeat = false;
@@ -17,7 +18,7 @@ struct ODriveUserData {
 
 class ODriveController {
   public:
-    ODriveController(ODriveCAN* oDrive1, ODriveCAN* oDrive2);
+    ODriveController();
     void SetODrivesCallbacks();
     void SetUpODrivesConnection(int retryDelays = 100);
     void SetODrivePosition(int index, float pos);

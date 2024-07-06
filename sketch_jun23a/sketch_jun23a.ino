@@ -32,11 +32,9 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 long displayedFrames = 0;
 float position = 0, velocity = 18, torque = 10;
 
-ODriveCAN odrv0(wrap_can_intf(can_intf), 0);  // Standard CAN message ID
-ODriveCAN odrv1(wrap_can_intf(can_intf), 1);  // Standard CAN message ID
 //
 SerialProtocolManager serialManager;
-ODriveController oDriveController(&odrv0, &odrv1);
+ODriveController oDriveController;
 
 bool setupCan() {
   return can_intf.begin((CanBitRate)CAN_BAUDRATE);

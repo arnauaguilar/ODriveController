@@ -2,19 +2,19 @@
 #include "ODriveController.h"
 #include "algorithm"
 
+ODriveCAN odrv0(wrap_can_intf(can_intf), 0);  // Standard CAN message ID
+ODriveCAN odrv1(wrap_can_intf(can_intf), 1);  // Standard CAN message ID
 
-ODriveController::ODriveController(ODriveCAN* oDrive1, ODriveCAN* oDrive2) 
+
+ODriveController::ODriveController() 
 {
-  oDrivesUserData.emplace_back(ODriveUserData());
-  oDrivesUserData.emplace_back(ODriveUserData());
-  oDrives.emplace_back(oDrive1);
-  oDrives.emplace_back(oDrive2);
-  //oDrives.reserve(ODRIVES_AMOUNT);
+  oDrives.reserve(ODRIVES_AMOUNT);
+  oDrives.emplace_back(&odrv0);
+  oDrives.emplace_back(&odrv1);
+  
   for(int i = 0; i < ODRIVES_AMOUNT; ++i){
-    //oDrives.emplace_back(wrap_can_intf(can_intf), i);
+    oDrivesUserData.emplace_back(ODriveUserData());
   }
-  //oDrives[0] = oDrive1;
-  //oDrives[1] = oDrive2;
 }
 
 void ODriveController::SetODrivesCallbacks()
