@@ -1,3 +1,4 @@
+#include "api/Binary.h"
 // If DEBUG is set to true, the arduino will send back all the received messages
 #define DEBUG false
 //#define SERIAL_SIZE 64  // OLED display height, in pixels
@@ -11,7 +12,7 @@ public:
   using callbackSignature = std::function<void(/* parameters go here like this: float a, int b | or: void* that means whatever inputs you want */)>;
   //std::function<void()>
   void GetMessagesFromSerial(float& var1, float& var2);
-  void ReadSignedBytes(int8_t* buffer, size_t n);
+  [[deprecated("use Serial.readBytes instead")]] void ReadSignedBytes(int8_t* buffer, size_t n);
   void WaitForBytes(uint8_t num_bytes, unsigned long timeout);
 
   template<typename T = uint8_t>
@@ -57,7 +58,6 @@ T SerialProtocolManager::Read() {
   constexpr size_t SIZE = sizeof(T) / sizeof(uint8_t);
   byte buffer[SIZE];
   WaitForBytes(SIZE, 200);
-  //ReadSignedBytes(buffer, SIZE);
   Serial.readBytes(buffer, SIZE);
 
   long result = NULL;
@@ -68,47 +68,3 @@ T SerialProtocolManager::Read() {
   }
   return (T)result;
 }
-
-//int8_t read_i8() {
-//  wait_for_bytes(1, 100);  // Wait for 1 byte with a timeout of 100 ms
-//  return (int8_t)Serial.read();
-//}
-//
-//int16_t read_i16() {
-//  int8_t buffer[2];
-//  wait_for_bytes(2, 100);  // Wait for 2 bytes with a timeout of 100 ms
-//  read_signed_bytes(buffer, 2);
-//  return (((int16_t)buffer[0]) & 0xff) | (((int16_t)buffer[1]) << 8 & 0xff00);
-//}
-//
-//int32_t read_i32() {
-//  int8_t buffer[4];
-//  wait_for_bytes(4, 200);  // Wait for 4 bytes with a timeout of 200 ms
-//  read_signed_bytes(buffer, 4);
-//  return (((int32_t)buffer[0]) & 0xff) | (((int32_t)buffer[1]) << 8 & 0xff00) | (((int32_t)buffer[2]) << 16 & 0xff0000) | (((int32_t)buffer[3]) << 24 & 0xff000000);
-//}
-
-
-
-//void write_order(enum Order myOrder) {
-//  uint8_t* Order = (uint8_t*)&myOrder;
-//  Serial.write(Order, sizeof(uint8_t));
-//}
-//
-//void write_i8(int8_t num) {
-//  Serial.write(num);
-//}
-//
-//void write_i16(int16_t num) {
-//  int8_t buffer[2] = { (int8_t)(num & 0xff), (int8_t)(num >> 8) };
-//  Serial.write((uint8_t*)&buffer, 2 * sizeof(int8_t));
-//}
-//
-//void write_i32(int32_t num) {
-//  int8_t buffer[4] = { (int8_t)(num & 0xff),
-//                       (int8_t)(num >> 8 & 0xff),
-//                       (int8_t)(num >> 16 & 0xff),
-//                       (int8_t)(num >> 24 & 0xff) };
-//  Serial.write((uint8_t*)&buffer, 4 * sizeof(int8_t));
-//}
-//

@@ -2,15 +2,12 @@
 #include "ODriveController.h"
 #include "algorithm"
 
-ODriveCAN odrv10(wrap_can_intf(can_intf), 10);  // Standard CAN message ID
-//ODriveCAN odrv1(wrap_can_intf(can_intf), 1);  // Standard CAN message ID
 
 
 ODriveController::ODriveController() 
 {
   oDrives.reserve(ODRIVES_AMOUNT);
-  //oDrives.emplace_back(&odrv0);
-  //oDrives.emplace_back(&odrv1);
+  oDrivesUserData.reserve(ODRIVES_AMOUNT);
 
   for(int i = 0; i < ODRIVES_AMOUNT; ++i){
     oDrivesUserData.emplace_back(ODriveUserData());
